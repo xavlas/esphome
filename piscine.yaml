@@ -1,0 +1,61 @@
+esphome:
+  name: piscine
+
+esp32:
+  board: esp32-c3-devkitm-1
+
+# Enable Home Assistant API
+api:
+
+ota:
+  - platform: esphome
+    password: ""
+
+mdns:
+
+time:
+  - platform: sntp
+    id: my_time
+    timezone: Europe/Paris
+
+wifi:
+  ssid: "Livebox-7B50"
+  password: "YFctx7yXjNaiUSZaff"
+  ##ssid: "ORBI20"
+  ##password: "gentlepotato970"
+  
+sensor:
+  - platform: dallas_temp
+    address: 0xca00000046992a28
+    name: temperature
+    update_interval: 60s
+    filters:
+      - lambda: return x + 2.0; 
+
+deep_sleep:
+  id: deep_sleep_1
+
+interval:
+  - interval: 1min
+    then:
+      - if:
+          condition:
+            lambda: |-
+              auto now = id(my_time).now();
+              return now.is_valid() && now.hour == 0 && now.minute == 0;
+          then:
+            - deep_sleep.enter:
+                id: deep_sleep_1
+                sleep_duration: 25200s  # 7 heures
+
+logger:
+  level: DEBUG  # Choix : NONE, ERROR, WARN, INFO, DEBUG, VERBOSE, VERY_VERBOSE
+  baud_rate: 115200  # vitesse série (optionnel)
+  logs:
+    sensor: DEBUG           # Réduit le niveau de logs juste pour "sensor"
+    one_wire.gpio: DEBUG    # Niveau spécifique pour le bus OneWire
+
+one_wire:
+  - platform: gpio
+    pin: GPIO4
+    id: bus_ds

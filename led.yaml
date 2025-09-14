@@ -1,0 +1,140 @@
+esphome:
+  name: led
+
+esp32:
+  board: esp32-c3-devkitm-1
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  - platform: esphome
+    password: ""
+
+mdns:
+
+wifi:
+  ssid: "xxxxxxxxxx"
+  password: "xxxxxxxxxxxx"
+  
+time:
+  - platform: sntp
+    id: my_time
+    timezone: Europe/Paris
+
+sensor:
+  - platform: homeassistant
+    name: "Production solaire"
+    entity_id: sensor.solarnet_puissance_photovoltaique
+    id: ha_prod_sensor
+
+  - platform: homeassistant
+    name: "CAC"
+    entity_id: sensor.yahoofinance_fchi
+    id: ha_cac_sensor
+
+  - platform: homeassistant
+    name: "piscine temperature"
+    entity_id: sensor.piscine_temperature
+    id: ha_piscine_temperature_sensor
+
+binary_sensor:
+  - platform: homeassistant
+    name: "Piscine activee"
+    entity_id: switch.pompe_piscine_switch
+    id: ha_piscine_sensor
+
+spi:
+  clk_pin: GPIO2
+  mosi_pin: GPIO4
+
+web_server:
+  port: 80
+
+font:
+  - file: "pixelmix.ttf"
+    id: my_font
+    size: 8
+
+text:
+  - platform: template
+    name: "Message perso"
+    id: message_perso
+    initial_value: ""
+    mode: text
+    optimistic: true
+
+number:
+  - platform: template
+    name: "Template number"
+    optimistic: true
+    min_value: 0
+    max_value: 15
+    step: 1
+    id: template_number
+
+display:
+  - platform: max7219digit
+    id: display_max
+    cs_pin: GPIO6
+    num_chips: 4
+    num_chip_lines: 1
+    lambda: |-
+      it.scroll(true, max7219digit::CONTINUOUS, 20, 0, 0);
+      it.intensity(15);
+
+      float prod = id(ha_prod_sensor).state;
+      float cac = id(ha_cac_sensor).state;
+      float pt = id(ha_piscine_temperature_sensor).state;
+      const char* piscine = id(ha_piscine_sensor).state ? "Pompe: ON" : "Pompe: OFF";
+
+      char time_str[6];
+      if (id(my_time).now().is_valid()) {
+        snprintf(time_str, sizeof(time_str), "%02d:%02d", (int)id(my_time).now().hour, (int)id(my_time).now().minute);
+      } else {
+        snprintf(time_str, sizeof(time_str), "--:--");
+      }
+
+      char display_text[160];
+      snprintf(display_text, sizeof(display_text), " %s | Solaire: %.0f W | %s | CAC: %.0f | %s | Piscine: %.f°", id(message_perso).state.c_str(), prod, time_str, cac, piscine, pt);
+
+      it.print(0, 0, id(my_font), display_text);
+
+deep_sleep:
+  id: deep_sleep_1
+
+globals:
+  - id: screen_off
+    type: bool
+    initial_value: 'false'
+
+interval:
+  - interval: 1min
+    then:
+      - lambda: |-
+          auto heure = id(my_time).now().hour;
+          if (heure >= 0 && heure < 7) {
+            id(display_max).intensity(0);   // Éteint
+            ESP_LOGI("main", "Il est %d h → passage en deep sleep", heure);
+            id(screen_off) = true;
+          } else {
+            id(display_max).intensity(15);  // Allume
+            id(screen_off) = false;
+          }
+      - if:
+          condition:
+            lambda: |-
+              auto now = id(my_time).now();
+              return now.is_valid() && now.hour == 0 && now.minute == 0 && id(screen_off);
+          then:
+            - deep_sleep.enter:
+                id: deep_sleep_1
+                sleep_duration: 25200s  # 7 heures
+
+  - interval: 10s
+    then:
+      - lambda: |-
+                  ESP_LOGI("main", "Solaire: %.0f W | CAC: %.0f", id(ha_prod_sensor).state, id(ha_cac_sensor).state);
