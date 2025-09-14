@@ -1,0 +1,31 @@
+esphome:
+  name: portail
+
+esp32:
+  board: esp32-c3-devkitm-1
+
+api:
+
+ota:
+  - platform: esphome
+
+web_server:
+  port: 80
+
+wifi:
+  ssid: "xxxxxxxx"
+  password: "xxxxxxxxxx"
+
+logger:
+
+switch:
+  - platform: gpio
+    pin:
+      number: GPIO2
+      mode: OUTPUT_OPEN_DRAIN  # ✅ Contact sec (ne force pas de tension)
+      inverted: false
+    id: contact_sec
+    name: "Contact Sec"
+    on_turn_on:
+      - delay: 3s              # Appui simulé pendant 1 seconde
+      - switch.turn_off: contact_sec
