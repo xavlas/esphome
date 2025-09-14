@@ -19,10 +19,8 @@ time:
     timezone: Europe/Paris
 
 wifi:
-  ssid: "Livebox-7B50"
-  password: "YFctx7yXjNaiUSZaff"
-  ##ssid: "ORBI20"
-  ##password: "gentlepotato970"
+  ssid: "xxxxxxxxxxxxxxx"
+  password: "xxxxxxxxxxxxx"
   
 sensor:
   - platform: dallas_temp
@@ -49,11 +47,11 @@ interval:
                 sleep_duration: 25200s  # 7 heures
 
 logger:
-  level: DEBUG  # Choix : NONE, ERROR, WARN, INFO, DEBUG, VERBOSE, VERY_VERBOSE
-  baud_rate: 115200  # vitesse série (optionnel)
+  level: INFO  
+  baud_rate: 115200  
   logs:
-    sensor: DEBUG           # Réduit le niveau de logs juste pour "sensor"
-    one_wire.gpio: DEBUG    # Niveau spécifique pour le bus OneWire
+    sensor: INFO          
+    one_wire.gpio: INFO    
 
 one_wire:
   - platform: gpio
