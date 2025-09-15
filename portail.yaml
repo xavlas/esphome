@@ -22,10 +22,10 @@ switch:
   - platform: gpio
     pin:
       number: GPIO2
-      mode: OUTPUT_OPEN_DRAIN  # ✅ Contact sec (ne force pas de tension)
+      mode: OUTPUT_OPEN_DRAIN 
       inverted: false
     id: contact_sec
     name: "Contact Sec"
     on_turn_on:
-      - delay: 3s              # Appui simulé pendant 1 seconde
+      - delay: 3s              
       - switch.turn_off: contact_sec
